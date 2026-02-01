@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Service PHP-FPM
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: buzz-events-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - buzz-network
+    depends_on:
+      - db
+
+  # Service Nginx
+  nginx:
+    image: nginx:alpine
+    container_name: buzz-events-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - buzz-network
+    depends_on:
+      - app
+
+  # Service MySQL
+  db:
+    image: mysql:8.0
+    container_name: buzz-events-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: buzz_events
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_USER: buzz_user
+      MYSQL_PASSWORD: buzz_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - buzz-network
+
+  # Service phpMyAdmin (optionnel)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: buzz-events-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "8081:80"
+    networks:
+      - buzz-network
+    depends_on:
+      - db
+
+networks:
+  buzz-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
