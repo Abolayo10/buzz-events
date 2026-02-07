@@ -1,1 +1,4 @@
 *.sqlite*
+# Ignore tout sauf database.sqlite
+/database/*.sqlite
+!database/database.sqlite
