@@ -2,8 +2,9 @@ FROM php:8.4-cli
 
 WORKDIR /var/www
 
+# Installer dépendances système et sqlite3
 RUN apt-get update && apt-get install -y \
-    unzip git curl \
+    unzip git curl libsqlite3-dev \
     && docker-php-ext-install pdo pdo_sqlite
 
 COPY . .
