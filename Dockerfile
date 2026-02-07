@@ -1,27 +1,16 @@
-FROM php:8.4-fpm
-
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip
-
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+FROM php:8.4-cli
 
 WORKDIR /var/www
 
-COPY . /var/www
+RUN apt-get update && apt-get install -y \
+    unzip git curl \
+    && docker-php-ext-install pdo pdo_sqlite
 
-RUN composer install --no-interaction --no-dev --optimize-autoloader
+COPY . .
 
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www/storage
+RUN mkdir -p storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
-EXPOSE 9000
+EXPOSE 8080
 
-CMD ["php-fpm"]
+CMD ["sh", "-c", "exec php -S 0.0.0.0:$PORT -t public"]
