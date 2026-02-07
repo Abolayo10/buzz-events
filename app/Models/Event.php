@@ -14,6 +14,12 @@ class Event extends Model
         'image',
         'description',
         'source_link',
-        'views'
+        'views',
+        'user_id'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class);
+    }
 }

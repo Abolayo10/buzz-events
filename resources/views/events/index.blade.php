@@ -43,10 +43,13 @@
                         <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2 line-clamp-2">{{ $event->title }}</h3>
                         <p class="text-gray-500 text-sm mb-3 flex-1">{{ Str::limit($event->description, 100) }}</p>
 
-                        <!-- Date -->
-                        <p class="text-gray-400 text-xs mb-4">
-                            <i class="fas fa-calendar mr-1"></i>{{ $event->created_at->diffForHumans() }}
-                        </p>
+                        <!-- Auteur et Date -->
+                    <div class="flex flex-wrap gap-2 text-xs text-gray-400 mb-4">
+                        @if($event->user)
+                            <span><i class="fas fa-user mr-1"></i>{{ $event->user->name }}</span>
+                        @endif
+                        <span><i class="fas fa-calendar mr-1"></i>{{ $event->created_at->diffForHumans() }}</span>
+                    </div>
 
                         <!-- Boutons -->
                         <div class="flex space-x-2">
