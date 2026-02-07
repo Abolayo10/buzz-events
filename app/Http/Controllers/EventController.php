@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class EventController extends Controller
 {
     public function index()
     {
-        $events = Event::latest()->paginate(12);
+        $events = Event::with('user')->latest()->paginate(12);
         return view('events.index', compact('events'));
     }
 
@@ -33,6 +34,8 @@ class EventController extends Controller
             $validated['image'] = $imagePath;
         }
 
+        $validated['user_id'] = Auth::id();
+
         Event::create($validated);
 
         return redirect()->route('events.index')
@@ -47,11 +50,20 @@ class EventController extends Controller
 
     public function edit(Event $event)
     {
+        if (Auth::id() !== $event->user_id) {
+            return redirect()->route('events.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à modifier cet événement.');
+        }
         return view('events.edit', compact('event'));
     }
 
     public function update(Request $request, Event $event)
     {
+        if (Auth::id() !== $event->user_id) {
+            return redirect()->route('events.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à modifier cet événement.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -75,10 +87,15 @@ class EventController extends Controller
 
     public function destroy(Event $event)
     {
+        if (Auth::id() !== $event->user_id) {
+            return redirect()->route('events.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à supprimer cet événement.');
+        }
+
         if ($event->image) {
             Storage::disk('public')->delete($event->image);
         }
-        
+
         $event->delete();
 
         return redirect()->route('events.index')

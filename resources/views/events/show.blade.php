@@ -19,13 +19,18 @@
         <div class="p-5 sm:p-8">
 
             <!-- Métadonnées -->
-            <div class="flex flex-wrap items-center gap-4 text-gray-500 text-sm mb-6">
+            <div class="flex flex-wrap items-center gap-3 text-gray-500 text-sm mb-6">
                 <span class="flex items-center bg-gray-100 px-3 py-1 rounded-full">
                     <i class="fas fa-eye mr-2 text-purple-500"></i>{{ $event->views }} vues
                 </span>
                 <span class="flex items-center bg-gray-100 px-3 py-1 rounded-full">
                     <i class="fas fa-calendar mr-2 text-pink-500"></i>{{ $event->created_at->format('d/m/Y à H:i') }}
                 </span>
+                @if($event->user)
+                    <span class="flex items-center bg-gray-100 px-3 py-1 rounded-full">
+                        <i class="fas fa-user mr-2 text-blue-500"></i>{{ $event->user->name }}
+                    </span>
+                @endif
             </div>
 
             <!-- Description -->
@@ -41,19 +46,23 @@
                 </a>
             </div>
 
-            <!-- Actions admin -->
-            <div class="border-t pt-5 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <a href="{{ route('events.edit', $event) }}" class="flex-1 sm:flex-none bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm flex items-center justify-center">
-                    <i class="fas fa-edit mr-1"></i> Modifier
-                </a>
-                <form action="{{ route('events.destroy', $event) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')" class="flex-1 sm:flex-none">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm flex items-center justify-center">
-                        <i class="fas fa-trash mr-1"></i> Supprimer
-                    </button>
-                </form>
-            </div>
+            <!-- Actions admin (uniquement pour le créateur) -->
+            @auth
+                @if(Auth::id() === $event->user_id)
+                    <div class="border-t pt-5 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                        <a href="{{ route('events.edit', $event) }}" class="flex-1 sm:flex-none bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm flex items-center justify-center">
+                            <i class="fas fa-edit mr-1"></i> Modifier
+                        </a>
+                        <form action="{{ route('events.destroy', $event) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')" class="flex-1 sm:flex-none">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm flex items-center justify-center">
+                                <i class="fas fa-trash mr-1"></i> Supprimer
+                            </button>
+                        </form>
+                    </div>
+                @endif
+            @endauth
         </div>
     </div>
 </div>
