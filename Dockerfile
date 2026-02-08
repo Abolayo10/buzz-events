@@ -1,12 +1,8 @@
-FROM php:8.4-apache
-
-# Fix Apache MPM conflict
-RUN a2dismod mpm_event mpm_worker \
-    && a2enmod mpm_prefork \
-    && a2enmod rewrite
+FROM php:8.4-fpm
 
 # Dépendances système
 RUN apt-get update && apt-get install -y \
+    nginx \
     git \
     curl \
     libpng-dev \
@@ -14,34 +10,25 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Extensions PHP
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# Apache
-RUN a2enmod rewrite
-
-# DocumentRoot Laravel
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # App
-WORKDIR /var/www/html
+WORKDIR /var/www
 COPY . .
 
-# Dépendances Laravel
 RUN composer install --optimize-autoloader --no-dev --no-interaction
 
-# Permissions
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Railway gère PORT automatiquement → NE RIEN TOUCHER
-EXPOSE 80
+# Nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-CMD ["apache2-foreground"]
+EXPOSE 8080
+
+CMD service nginx start && php-fpm
