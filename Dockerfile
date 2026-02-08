@@ -1,34 +1,42 @@
-# Utiliser PHP CLI 8.4
-FROM php:8.4-cli
+FROM php:8.2-apache
 
-WORKDIR /var/www
-
-# Installer dépendances système pour Laravel + SQLite + Composer
+# Installation des extensions PHP nécessaires
 RUN apt-get update && apt-get install -y \
-    unzip git curl libsqlite3-dev libzip-dev \
-    && docker-php-ext-install pdo pdo_sqlite zip
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip
 
-# Installer Composer
-COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# Copier le projet Laravel
+# Installation de Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Configuration Apache
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN a2enmod rewrite
+
+# Copie du projet
+WORKDIR /var/www/html
 COPY . .
 
-# Installer les dépendances Laravel
-RUN composer install --no-dev --optimize-autoloader
+# Installation des dépendances
+RUN composer install --optimize-autoloader --no-dev
 
-# Créer le fichier SQLite si nécessaire
-RUN mkdir -p database \
-    && touch database/database.sqlite \
-    && chmod 775 database/database.sqlite \
-    && chmod -R 775 database \
-    && chmod -R 775 storage bootstrap/cache
+# Permissions
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Lancer les migrations
-RUN php artisan migrate || true
+EXPOSE 80
+CMD ["apache2-foreground"]
+```
 
-# Exposer le port pour Railway
-EXPOSE 8080
+## Ma recommandation
 
-# Lancer Laravel sur le port dynamique
-CMD ["sh", "-c", "exec php -S 0.0.0.0:$PORT -t public"]
+Pour Railway, utilisez **l'Option 1** avec le Procfile suivant :
+```
+web: heroku-php-apache2 public/
