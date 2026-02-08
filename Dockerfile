@@ -1,5 +1,10 @@
 FROM php:8.4-apache
 
+# Fix Apache MPM conflict
+RUN a2dismod mpm_event mpm_worker \
+    && a2enmod mpm_prefork \
+    && a2enmod rewrite
+
 # Dépendances système
 RUN apt-get update && apt-get install -y \
     git \
