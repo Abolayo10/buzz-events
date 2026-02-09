@@ -9,7 +9,9 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    nginx
+    nginx \
+    supervisor \
+ && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
@@ -23,26 +25,19 @@ WORKDIR /var/www
 # Copy application
 COPY . .
 
-# Install dependencies
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Configure Nginx
-RUN echo 'server { \
-    listen 8080; \
-    root /var/www/public; \
-    index index.php; \
-    location / { try_files $uri $uri/ /index.php?$query_string; } \
-    location ~ \.php$ { \
-        fastcgi_pass 127.0.0.1:9000; \
-        fastcgi_index index.php; \
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
-        include fastcgi_params; \
-    } \
-}' > /etc/nginx/sites-available/default
+RUN rm /etc/nginx/sites-enabled/default
+COPY ./docker/nginx.conf /etc/nginx/sites-available/default
+RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-# Run migrations and start services
-CMD php artisan migrate --force && \
-    php-fpm -D && \
-    nginx -g "daemon off;"
+# Supervisord configuration to run PHP-FPM + Nginx in foreground
+COPY ./docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+# Expose port
 EXPOSE 8080
+
+# Start supervisord
+CMD ["/usr/bin/supervisord", "-n"]
