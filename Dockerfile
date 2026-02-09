@@ -1,4 +1,4 @@
-FROM php:8.4-fpm
+FROM php:8.3-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -61,13 +61,14 @@ RUN echo 'server { \
 }' > /etc/nginx/sites-available/default && \
     ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
-# Create startup script
+# Create startup script - NO config:cache here!
 RUN echo '#!/bin/bash\n\
 set -e\n\
-php artisan config:cache\n\
-php artisan route:cache\n\
+echo "Running migrations..."\n\
 php artisan migrate --force\n\
+echo "Starting PHP-FPM..."\n\
 php-fpm -D\n\
+echo "Starting Nginx..."\n\
 nginx -g "daemon off;"\n\
 ' > /start.sh && chmod +x /start.sh
 
