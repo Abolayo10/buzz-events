@@ -1,4 +1,4 @@
-FROM php:8.3-fpm
+FROM php:8.4-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -61,7 +61,7 @@ RUN echo 'server { \
 }' > /etc/nginx/sites-available/default && \
     ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
-# Create startup script - NO config:cache here!
+# Create startup script
 RUN echo '#!/bin/bash\n\
 set -e\n\
 echo "Running migrations..."\n\
